@@ -51,6 +51,21 @@ services:
 
     ports:
       - "8080:8080"
+  
+  minio:
+    image: minio/minio:latest
+    container_name: dpe-minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: admin
+      MINIO_ROOT_PASSWORD: admin123456
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio-data:/data
 
 volumes:
   postgres_data:
+  minio-data:

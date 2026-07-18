@@ -1,9 +1,11 @@
 package auth
 
-import( 
-    "time"
-    "github.com/google/uuid"
+import (
+	"time"
+
+	"github.com/google/uuid"
 )
+
 type User struct {
 	ID uuid.UUID `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
 
@@ -18,5 +20,5 @@ type User struct {
 	CreatedAt time.Time
 	UpdatedAt time.Time
 
-	SessionToken string `gorm:"uniqueIndex"`
+	SessionToken *string `gorm:"uniqueIndex"`
 }

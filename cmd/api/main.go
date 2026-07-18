@@ -8,6 +8,7 @@ import (
 	myDB "github.com/sameer2006-s/document-processing-engine/internal/db"
 	"github.com/sameer2006-s/document-processing-engine/internal/auth"
 	"github.com/sameer2006-s/document-processing-engine/internal/server"
+	"github.com/sameer2006-s/document-processing-engine/internal/document"
 )
 
 func main() {
@@ -27,10 +28,18 @@ func main() {
 		log.Fatal("Failed to migrate database: ", err)
 	}
 	log.Println("Database migrated successfully.")
-	authService := auth.NewAuthService(db)
+	authRepository := auth.NewAuthRepository(db)
+	authService := auth.NewAuthService(authRepository)
 	authHandler := auth.NewAuthHandler(authService)
 
-	err = server.RunServer(authHandler)
+	documentRepository, err := document.NewDocumentRepository(db, cfg.Minio)
+	if err != nil {
+		log.Fatal("Failed to create document repository: ", err)
+	}
+	documentService := document.NewDocumentService(documentRepository)
+	documentHandler := document.NewDocumentHandler(documentService)
+
+	err = server.RunHttpServer(authHandler, authService, documentHandler, cfg.App)
 	if err != nil {
 		log.Fatal("Failed to run server: ", err)
 	}
