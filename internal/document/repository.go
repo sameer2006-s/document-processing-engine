@@ -102,3 +102,15 @@ func (r *DocumentRepository) UploadFile(fileMetadata *FileMetadata , file []byte
 func (r *DocumentRepository) DeleteFile(fileMetadata *FileMetadata) error {
 	return errors.Join(r.DeleteFileMetadata(fileMetadata.ID), r.minioClient.DeleteFile(fileMetadata))
 }
+
+func (r *DocumentRepository) GetPendingDocuments() ([]FileMetadata, error) {
+	var fileMetadata []FileMetadata
+	err:= r.db.Model(&FileMetadata{}).Where("status = ?", DocumentStatusPending).Find(&fileMetadata).Error
+	if err!= nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, errors.New("no pending documents found") 
+		}
+		return nil, errors.New("failed to get pending documents") 
+	}
+	return fileMetadata, nil
+}

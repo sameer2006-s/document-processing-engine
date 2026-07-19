@@ -1,6 +1,7 @@
 package document
 
 import (
+	"errors"
 	"io"
 	"net/http"
 	"strconv"
@@ -26,39 +27,90 @@ func (h *DocumentHandler) UploadFile(c *gin.Context) {
 	}
 	userId := userID.(uuid.UUID)
 	file, err := c.FormFile("file")
-    if err != nil {
-        c.JSON(http.StatusBadRequest, gin.H{
-            "error": "file is required",
-        })
-        return
-    }
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "file is required",
+		})
+		return
+	}
 
-    src, err := file.Open()
-    if err != nil {
-        c.JSON(http.StatusInternalServerError, gin.H{
-            "error": err.Error(),
-        })
-        return
-    }
-    defer src.Close()
+	src, err := file.Open()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+	defer src.Close()
 
 	fileContent, err := io.ReadAll(src)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	err = h.service.UploadFile(&FileMetadata{
-		UserID: userId,
+
+	fileMetadata, err := h.service.UploadFile(&FileMetadata{
+		UserID:       userId,
 		OriginalName: file.Filename,
-		FileSize: int64(file.Size),
-		ContentType: file.Header.Get("Content-Type"),
-		BucketName: "documents",
-		MinioKey: uuid.New().String(),
-		}, fileContent)
+		FileSize:     int64(file.Size),
+		ContentType:  file.Header.Get("Content-Type"),
+		BucketName:   "documents",
+		MinioKey:     uuid.New().String(),
+	}, fileContent)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+	c.JSON(http.StatusOK, fileMetadata)
+}
+
+func (h *DocumentHandler) ListDocuments(c *gin.Context) {
+	userID, err := auth.GetUserID(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		return
+	}
+	userId := userID.(uuid.UUID)
+
+	documents, err := h.service.ListDocumentsByUser(userId)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	if documents == nil {
+		documents = []FileMetadata{}
+	}
+	c.JSON(http.StatusOK, documents)
+}
+
+func (h *DocumentHandler) DeleteDocument(c *gin.Context) {
+	id, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
+		return
+	}
+
+	userID, err := auth.GetUserID(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		return
+	}
+	userId := userID.(uuid.UUID)
+
+	err = h.service.DeleteFile(id, userId)
+	if err != nil {
+		if errors.Is(err, ErrFileNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "file not found"})
+			return
+		}
+		if errors.Is(err, ErrForbidden) {
+			c.JSON(http.StatusForbidden, gin.H{"error": "forbidden"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "deleted"})
 }
 
 func (h *DocumentHandler) GetFile(c *gin.Context) {

@@ -5,7 +5,8 @@ import (
 
 	"github.com/joho/godotenv"
 	"github.com/sameer2006-s/document-processing-engine/internal/config"
-	"github.com/sameer2006-s/document-processing-engine/internal/db"
+	myDB "github.com/sameer2006-s/document-processing-engine/internal/db"
+	"github.com/sameer2006-s/document-processing-engine/internal/temporal"
 )
 
 func main() {
@@ -16,13 +17,38 @@ func main() {
 		log.Fatal(err)
 	}
 
-	db, err := db.New(cfg.DB)
+	db, err := myDB.New(cfg.DB)
 	if err != nil {
 		log.Fatal(err)
 	}
+	err = myDB.MyAutoMigrate(db)
+	if err != nil {
+		log.Fatal("Failed to migrate database: ", err)
+	}
+	log.Println("Database migrated successfully.")
 
+	temporalClient, err := temporal.NewTemporalClient("document-processing-workflow", "document-processing-task-queue")
+	if err != nil {
+		log.Fatal("Failed to create temporal client: ", err)
+	}
+	defer temporalClient.Client.Close()
 	defer func() {
 		sqlDB, _ := db.DB()
 		_ = sqlDB.Close()
 	}()
+
+	worker := temporal.NewTemporalWorker(temporalClient)
+	err = worker.RegisterWorkflows()
+	if err != nil {
+		log.Fatal("Failed to register workflows: ", err)
+	}
+	err = worker.RegisterActivities()
+	if err != nil {
+		log.Fatal("Failed to register activities: ", err)
+	}
+	err = worker.Run()
+	if err != nil {
+		log.Fatal("Failed to run worker: ", err)
+	}
+	log.Println("Worker run successfully.")
 }

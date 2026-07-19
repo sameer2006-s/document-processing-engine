@@ -38,7 +38,7 @@ func (r *AuthRepository) GetUserByEmail(email string) (*User, error) {
 	err := r.db.Model(&User{}).Where("email = ?", email).First(&user).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, errors.New("user not found") 
+			return nil, nil
 		}
 		return nil, err
 	}
