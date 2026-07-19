@@ -2,17 +2,17 @@ package temporal
 
 import (
 	"time"
+
 	"go.temporal.io/sdk/workflow"
 )
 
 type DocumentProcessingWorkflowResult struct {
-	Success bool
-	Message string
+	Success   bool
+	Message   string
 	OCRResult string
 }
 
-func DocumentProcessingWorkflow(ctx workflow.Context, documentID string) (DocumentProcessingWorkflowResult,error) {
-
+func DocumentProcessingWorkflow(ctx workflow.Context, documentID string) (DocumentProcessingWorkflowResult, error) {
 	activityOptions := workflow.ActivityOptions{
 		StartToCloseTimeout: 5 * time.Minute,
 	}
@@ -20,20 +20,21 @@ func DocumentProcessingWorkflow(ctx workflow.Context, documentID string) (Docume
 	logger := workflow.GetLogger(ctx)
 	logger.Info("Starting document processing workflow", "documentID", documentID)
 
-	ocrActivity := NewOCRActivity()
-	err := workflow.ExecuteActivity(activityCtx, ocrActivity.RunOCRActivity, documentID).Get(activityCtx, nil)
+	var activity *OCRActivity
+	var ocrResult string
+	err := workflow.ExecuteActivity(activityCtx, activity.RunOCRActivity, documentID).Get(activityCtx, &ocrResult)
 	if err != nil {
 		logger.Error("Failed to run OCR activity", "error", err)
 		return DocumentProcessingWorkflowResult{
-			Success: false,
-			Message: err.Error(),
+			Success:   false,
+			Message:   err.Error(),
 			OCRResult: "failed",
 		}, err
 	}
 
 	return DocumentProcessingWorkflowResult{
-		Success: true,
-		Message: "Document processing workflow completed successfully",
-		OCRResult: "success",
+		Success:   true,
+		Message:   "Document processing workflow completed successfully",
+		OCRResult: ocrResult,
 	}, nil
 }

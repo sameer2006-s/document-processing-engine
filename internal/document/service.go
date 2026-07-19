@@ -1,12 +1,10 @@
 package document
 
 import (
-	"context"
 	"errors"
 	"log"
 
 	"github.com/google/uuid"
-	"github.com/sameer2006-s/document-processing-engine/internal/temporal"
 )
 
 var (
@@ -14,12 +12,16 @@ var (
 	ErrForbidden    = errors.New("forbidden")
 )
 
+// WorkflowStarter starts async processing for a document.
+type WorkflowStarter func(documentID string) error
+
 type DocumentService struct {
-	repository *DocumentRepository
+	repository    *DocumentRepository
+	startWorkflow WorkflowStarter
 }
 
-func NewDocumentService(repository *DocumentRepository) *DocumentService {
-	return &DocumentService{repository: repository}
+func NewDocumentService(repository *DocumentRepository, startWorkflow WorkflowStarter) *DocumentService {
+	return &DocumentService{repository: repository, startWorkflow: startWorkflow}
 }
 
 func (s *DocumentService) GetFileContent(id uuid.UUID) ([]byte, error) {
@@ -38,6 +40,10 @@ func (s *DocumentService) UpdateFileMetadata(fileMetadata *FileMetadata) error {
 	return s.repository.UpdateFileMetadata(fileMetadata)
 }
 
+func (s *DocumentService) UpdateDocumentStatus(id uuid.UUID, status string) error {
+	return s.repository.UpdateDocumentStatus(id, DocumentStatus(status))
+}
+
 func (s *DocumentService) DeleteFileMetadata(id uuid.UUID) error {
 	return s.repository.DeleteFileMetadata(id)
 }
@@ -47,29 +53,15 @@ func (s *DocumentService) UploadFile(fileMetadata *FileMetadata, file []byte) (*
 		return nil, err
 	}
 
-	go func() {
-		cl, err := temporal.NewTemporalClient("document-processing-workflow-"+fileMetadata.ID.String(), "document-processing-task-queue")
-		if err != nil {
-			log.Fatal("Failed to create temporal client: ", err)
-		}
-		defer cl.Client.Close()
-		run, runerr := cl.Client.ExecuteWorkflow(
-			context.Background(),
-			cl.StartWorkflowOptions,
-			temporal.DocumentProcessingWorkflow,
-			fileMetadata.ID.String(),
-		)
-		if runerr != nil {
-			log.Fatal("Failed to execute workflow: ", runerr)
-		}
-		var result temporal.DocumentProcessingWorkflowResult
-		err = run.Get(context.Background(), &result)
-		if runerr != nil {
-			log.Fatal("Failed to get workflow result: ", runerr)
-		}
-		log.Println("Workflow result: ", result)
-	}()
-	
+	if s.startWorkflow != nil {
+		id := fileMetadata.ID.String()
+		go func() {
+			if err := s.startWorkflow(id); err != nil {
+				log.Printf("failed to start workflow: %v", err)
+			}
+		}()
+	}
+
 	return fileMetadata, nil
 }
 

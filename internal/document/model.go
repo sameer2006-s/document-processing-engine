@@ -9,15 +9,16 @@ import (
 type DocumentStatus string
 
 const (
-	DocumentStatusPending DocumentStatus = "pending"
-	DocumentStatusProcessed DocumentStatus = "processed"
-	DocumentStatusFailed DocumentStatus = "failed"
+	DocumentStatusPending       DocumentStatus = "pending"
+	DocumentStatusOCRProcessing DocumentStatus = "ocr-processing"
+	DocumentStatusDone          DocumentStatus = "done"
+	DocumentStatusFailed        DocumentStatus = "failed"
 )
 
 type FileMetadata struct {
-	ID           uuid.UUID      `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
+	ID           uuid.UUID      `gorm:"type:uuid;default:gen_random_uuid();primaryKey" json:"id"`
 	UserID       uuid.UUID      `gorm:"type:uuid;not null;index" json:"user_id"`
-	MinioKey     string         `gorm:"uniqueIndex;not null" json:"minio_key"` 
+	MinioKey     string         `gorm:"uniqueIndex;not null" json:"minio_key"`
 	OriginalName string         `gorm:"not null" json:"original_name"`
 	BucketName   string         `gorm:"not null" json:"bucket_name"`
 	FileSize     int64          `json:"file_size"`
