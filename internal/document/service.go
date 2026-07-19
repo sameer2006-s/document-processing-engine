@@ -90,3 +90,14 @@ func (s *DocumentService) GetPendingDocuments() ([]FileMetadata, error) {
 	}
 	return documents, nil
 }
+
+func (s *DocumentService) SearchUserDocuments(userID uuid.UUID, query string) ([]FileMetadata, error) {
+	documents, err := s.repository.SearchUserDocuments(userID, query)
+	if err != nil {
+		return nil, err
+	}
+	if len(documents) == 0 {
+		return nil, nil
+	}
+	return documents, nil
+}

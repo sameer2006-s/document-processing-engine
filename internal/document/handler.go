@@ -130,3 +130,22 @@ func (h *DocumentHandler) GetFile(c *gin.Context) {
 	c.Header("Content-Disposition", "attachment; filename="+stat.OriginalName)
 	c.Data(http.StatusOK, stat.ContentType, fileContent)
 }
+
+func (h *DocumentHandler) SearchMyFiles(c *gin.Context) {
+	query := c.Query("query")
+	userID, err := auth.GetUserID(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		return
+	}
+	var documents []FileMetadata
+	if userID != nil && query != "" {
+		userId := userID.(uuid.UUID)
+		documents, err = h.service.SearchUserDocuments(userId, query)
+	} 
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, documents)
+}

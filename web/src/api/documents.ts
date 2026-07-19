@@ -5,6 +5,14 @@ export function listDocuments() {
   return apiFetch<Document[]>('/documents')
 }
 
+export async function searchMyFiles(query: string) {
+  const params = new URLSearchParams({ query })
+  const data = await apiFetch<Document[] | null>(
+    `/search-my-files?${params.toString()}`,
+  )
+  return data ?? []
+}
+
 export function uploadFile(file: File) {
   const formData = new FormData()
   formData.append('file', file)

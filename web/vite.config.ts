@@ -14,6 +14,7 @@ export default defineConfig({
       '/upload': { target: 'http://localhost:7070', changeOrigin: true },
       '/documents': { target: 'http://localhost:7070', changeOrigin: true },
       '/get-file': { target: 'http://localhost:7070', changeOrigin: true },
+      '/search-my-files': { target: 'http://localhost:7070', changeOrigin: true },
     },
   },
   build: { outDir: 'dist' },

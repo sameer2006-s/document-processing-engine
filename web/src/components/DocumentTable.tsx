@@ -6,6 +6,7 @@ import type { Document } from '../api/types'
 interface DocumentTableProps {
   documents: Document[]
   onDeleted: () => void
+  emptyMessage?: string
 }
 
 function formatSize(bytes: number) {
@@ -128,6 +129,7 @@ function OcrViewer({
 export default function DocumentTable({
   documents,
   onDeleted,
+  emptyMessage = 'No documents yet. Upload your first file above.',
 }: DocumentTableProps) {
   const [busyId, setBusyId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -171,7 +173,7 @@ export default function DocumentTable({
   if (documents.length === 0) {
     return (
       <div className="empty-state">
-        <p>No documents yet. Upload your first file above.</p>
+        <p>{emptyMessage}</p>
       </div>
     )
   }

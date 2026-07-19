@@ -125,3 +125,15 @@ func (r *DocumentRepository) GetPendingDocuments() ([]FileMetadata, error) {
 	}
 	return fileMetadata, nil
 }
+
+func (r *DocumentRepository) SearchUserDocuments(userID uuid.UUID, query string) ([]FileMetadata, error) {
+	var fileMetadata []FileMetadata
+	err:= r.db.Model(&FileMetadata{}).Where("user_id = ? AND (ocr_result ILIKE ? OR original_name ILIKE ?)", userID, "%"+query+"%", "%"+query+"%").Find(&fileMetadata).Error
+	if err!= nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, errors.New("no documents found") 
+		}
+		return nil, errors.New("failed to search documents") 
+	}
+	return fileMetadata, nil
+}

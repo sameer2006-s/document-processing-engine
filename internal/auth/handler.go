@@ -9,7 +9,7 @@ import (
 )
 
 type AuthHandler struct {
- authService *AuthService
+	authService *AuthService
 }
 
 type RegisterUserRequest struct {

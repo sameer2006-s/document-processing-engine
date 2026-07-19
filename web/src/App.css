@@ -164,6 +164,22 @@
   margin-bottom: 28px;
 }
 
+.search-bar {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  margin: 0 0 20px;
+}
+
+.search-field {
+  flex: 1;
+  min-width: 0;
+}
+
+.search-field input[type='search'] {
+  width: 100%;
+}
+
 .dashboard-header h1 {
   font-size: 32px;
   margin: 0 0 8px;

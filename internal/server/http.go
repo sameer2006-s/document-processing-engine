@@ -24,7 +24,7 @@ func RunHttpServer(authHandler *auth.AuthHandler, authService *auth.AuthService,
 	protected.GET("/documents", documentHandler.ListDocuments)
 	protected.DELETE("/documents/:id", documentHandler.DeleteDocument)
 	protected.GET("/get-file/:id", documentHandler.GetFile)
-
+	protected.GET("/search-my-files", documentHandler.SearchMyFiles)
 	router.Static("/assets", "./web/dist/assets")
 	router.StaticFile("/favicon.svg", "./web/dist/favicon.svg")
 	router.NoRoute(func(c *gin.Context) {
