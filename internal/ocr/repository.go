@@ -35,3 +35,6 @@ func (r *OCRRepository) GetFileContent(fileMetadata *document.FileMetadata) ([]b
 	return r.minioClient.GetFile(fileMetadata)
 }
 
+func (r *OCRRepository) SaveOCRResult(documentID uuid.UUID, ocrResult string) error {
+	return r.db.Model(&document.FileMetadata{}).Where("id = ?", documentID).Update("ocr_result", ocrResult).Error
+}

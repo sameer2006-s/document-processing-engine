@@ -4,6 +4,7 @@ export interface Document {
   file_size: number
   content_type: string
   status: 'pending' | 'ocr-processing' | 'done' | 'failed' | string
+  ocr_result?: string
   created_at: string
 }
 

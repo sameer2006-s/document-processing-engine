@@ -66,6 +66,13 @@ services:
     volumes:
       - minio-data:/data
 
+  ocr-service:
+    build: ./ocr-service
+    container_name: dpe-ocr
+    restart: unless-stopped
+    ports:
+      - "8090:8090"
+
 volumes:
   postgres_data:
   minio-data:

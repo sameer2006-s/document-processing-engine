@@ -279,6 +279,90 @@
   color: #b91c1c;
 }
 
+.ocr-cell {
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.ocr-view-btn {
+  font-size: 13px;
+  padding: 6px 10px;
+}
+
+.ocr-empty {
+  color: var(--text);
+  opacity: 0.6;
+}
+
+.ocr-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(15, 23, 42, 0.45);
+  box-sizing: border-box;
+}
+
+.ocr-modal {
+  width: min(100%, 720px);
+  max-height: min(85svh, 800px);
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.ocr-modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 20px 20px 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.ocr-modal-header h2 {
+  margin: 0;
+  font-size: 18px;
+  color: var(--text-h);
+}
+
+.ocr-modal-subtitle {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: var(--text);
+  word-break: break-word;
+}
+
+.ocr-modal-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.ocr-modal-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 16px 20px 20px;
+}
+
+.ocr-modal-text {
+  margin: 0;
+  font-family: ui-monospace, 'Cascadia Code', 'Segoe UI Mono', monospace;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--text-h);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
 .actions-cell {
   display: flex;
   gap: 8px;

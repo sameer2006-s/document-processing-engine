@@ -24,6 +24,7 @@ type FileMetadata struct {
 	FileSize     int64          `json:"file_size"`
 	ContentType  string         `json:"content_type"`
 	Status       DocumentStatus `json:"status" gorm:"default:pending"`
+	OCRResult    string         `json:"ocr_result" gorm:"type:text"`
 	CreatedAt    time.Time      `json:"created_at" gorm:"autoCreateTime"`
 	UpdatedAt    time.Time      `json:"updated_at" gorm:"autoUpdateTime"`
 	DeletedAt    gorm.DeletedAt `gorm:"index" json:"-"`

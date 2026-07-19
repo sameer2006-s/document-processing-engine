@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import { deleteDocument, downloadFile } from '../api/documents'
 import { getErrorMessage } from '../api/client'
 import type { Document } from '../api/types'
@@ -33,12 +33,107 @@ function statusLabel(status: string) {
   }
 }
 
+/** Backend may store raw OCR text or JSON {"text":"..."}. */
+function formatOcrResult(raw?: string) {
+  if (!raw?.trim()) return null
+  try {
+    const parsed = JSON.parse(raw) as { text?: unknown }
+    if (typeof parsed?.text === 'string') {
+      return parsed.text.trim() || null
+    }
+  } catch {
+    // plain text
+  }
+  return raw.trim()
+}
+
+function OcrViewer({
+  title,
+  text,
+  onClose,
+}: {
+  title: string
+  text: string
+  onClose: () => void
+}) {
+  const titleId = useId()
+  const closeRef = useRef<HTMLButtonElement>(null)
+  const [copied, setCopied] = useState(false)
+
+  useEffect(() => {
+    closeRef.current?.focus()
+    const prev = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') onClose()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => {
+      document.body.style.overflow = prev
+      window.removeEventListener('keydown', onKey)
+    }
+  }, [onClose])
+
+  async function handleCopy() {
+    try {
+      await navigator.clipboard.writeText(text)
+      setCopied(true)
+      window.setTimeout(() => setCopied(false), 1500)
+    } catch {
+      // ignore clipboard failures
+    }
+  }
+
+  return (
+    <div
+      className="ocr-modal-backdrop"
+      role="presentation"
+      onClick={onClose}
+    >
+      <div
+        className="ocr-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <header className="ocr-modal-header">
+          <div>
+            <h2 id={titleId}>OCR result</h2>
+            <p className="ocr-modal-subtitle">{title}</p>
+          </div>
+          <div className="ocr-modal-actions">
+            <button type="button" className="btn ghost" onClick={() => void handleCopy()}>
+              {copied ? 'Copied' : 'Copy'}
+            </button>
+            <button
+              ref={closeRef}
+              type="button"
+              className="btn ghost"
+              onClick={onClose}
+            >
+              Close
+            </button>
+          </div>
+        </header>
+        <div className="ocr-modal-body">
+          <pre className="ocr-modal-text">{text}</pre>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function DocumentTable({
   documents,
   onDeleted,
 }: DocumentTableProps) {
   const [busyId, setBusyId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [viewer, setViewer] = useState<{ title: string; text: string } | null>(
+    null,
+  )
 
   async function handleDownload(doc: Document) {
     setError(null)
@@ -89,44 +184,72 @@ export default function DocumentTable({
           <tr>
             <th>Name</th>
             <th>Status</th>
+            <th>OCR</th>
             <th>Size</th>
             <th>Uploaded</th>
             <th aria-label="Actions" />
           </tr>
         </thead>
         <tbody>
-          {documents.map((doc) => (
-            <tr key={doc.id}>
-              <td className="name-cell">{doc.original_name}</td>
-              <td>
-                <span className={`status-badge status-${doc.status}`}>
-                  {statusLabel(doc.status)}
-                </span>
-              </td>
-              <td>{formatSize(doc.file_size)}</td>
-              <td>{formatDate(doc.created_at)}</td>
-              <td className="actions-cell">
-                <button
-                  type="button"
-                  className="btn ghost"
-                  disabled={busyId === doc.id}
-                  onClick={() => void handleDownload(doc)}
-                >
-                  Download
-                </button>
-                <button
-                  type="button"
-                  className="btn danger"
-                  disabled={busyId === doc.id}
-                  onClick={() => void handleDelete(doc)}
-                >
-                  Delete
-                </button>
-              </td>
-            </tr>
-          ))}
+          {documents.map((doc) => {
+            const ocrText = formatOcrResult(doc.ocr_result)
+
+            return (
+              <tr key={doc.id}>
+                <td className="name-cell">{doc.original_name}</td>
+                <td>
+                  <span className={`status-badge status-${doc.status}`}>
+                    {statusLabel(doc.status)}
+                  </span>
+                </td>
+                <td className="ocr-cell">
+                  {ocrText ? (
+                    <button
+                      type="button"
+                      className="btn ghost ocr-view-btn"
+                      onClick={() =>
+                        setViewer({ title: doc.original_name, text: ocrText })
+                      }
+                    >
+                      View text
+                    </button>
+                  ) : (
+                    <span className="ocr-empty">—</span>
+                  )}
+                </td>
+                <td>{formatSize(doc.file_size)}</td>
+                <td>{formatDate(doc.created_at)}</td>
+                <td className="actions-cell">
+                  <button
+                    type="button"
+                    className="btn ghost"
+                    disabled={busyId === doc.id}
+                    onClick={() => void handleDownload(doc)}
+                  >
+                    Download
+                  </button>
+                  <button
+                    type="button"
+                    className="btn danger"
+                    disabled={busyId === doc.id}
+                    onClick={() => void handleDelete(doc)}
+                  >
+                    Delete
+                  </button>
+                </td>
+              </tr>
+            )
+          })}
         </tbody>
       </table>
+
+      {viewer && (
+        <OcrViewer
+          title={viewer.title}
+          text={viewer.text}
+          onClose={() => setViewer(null)}
+        />
+      )}
     </div>
   )
 }
