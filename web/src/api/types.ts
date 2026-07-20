@@ -6,6 +6,7 @@ export interface Document {
   status: 'pending' | 'ocr-processing' | 'done' | 'failed' | string
   ocr_result?: string
   thumbnail_key?: string
+  tags?: string[] | null
   created_at: string
 }
 

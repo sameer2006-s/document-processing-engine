@@ -4,9 +4,11 @@ import (
 	"log"
 
 	"github.com/joho/godotenv"
+	"github.com/sameer2006-s/document-processing-engine/internal/chat"
 	"github.com/sameer2006-s/document-processing-engine/internal/config"
 	myDB "github.com/sameer2006-s/document-processing-engine/internal/db"
 	"github.com/sameer2006-s/document-processing-engine/internal/document"
+	"github.com/sameer2006-s/document-processing-engine/internal/ocr"
 	"github.com/sameer2006-s/document-processing-engine/internal/temporal"
 )
 
@@ -42,9 +44,21 @@ func main() {
 	if err != nil {
 		log.Fatal("Failed to create minio client: ", err)
 	}
+	provider := chat.NewChatProvider(cfg.Chat.GitHubToken, cfg.Chat.Model)
+	ocrService := ocr.NewOCRService(db, *minioClient)
 
-	ocrActivity := temporal.NewOCRActivity(db, *minioClient)
-	w := temporal.NewTemporalWorker(temporalClient, ocrActivity)
+	documentRepository, err := document.NewDocumentRepository(db, cfg.Minio)
+	if err != nil {
+		log.Fatal("Failed to create document repository: ", err)
+	}
+	documentService := document.NewDocumentService(documentRepository, nil)
+
+	chatRepository := chat.NewChatRepository(db)
+	chatService := chat.NewChatService(provider, documentService, chatRepository)
+	
+	documentActivity := temporal.NewDocumentActivity(ocrService, chatService, documentService)
+
+	w := temporal.NewTemporalWorker(temporalClient, documentActivity)
 	if err = w.RegisterWorkflows(); err != nil {
 		log.Fatal("Failed to register workflows: ", err)
 	}

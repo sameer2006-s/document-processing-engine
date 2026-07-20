@@ -118,3 +118,5 @@ func (h *ChatHandler) parseChatRequest(c *gin.Context) (ChatRequest, uuid.UUID, 
 	}
 	return chatRequest, documentID, userUUID, true
 }
+
+

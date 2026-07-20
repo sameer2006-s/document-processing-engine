@@ -2,7 +2,9 @@ package chat
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/google/uuid"
 	"github.com/sameer2006-s/document-processing-engine/internal/document"
@@ -72,4 +74,58 @@ func (s *ChatService) ChatStream(ctx context.Context, userPrompt string, documen
 		return full, err
 	}
 	return full, nil
+}
+
+func (s *ChatService) GenerateTags(ctx context.Context, documentID uuid.UUID) (string, error) {
+	fileMetadata, err := s.docService.GetFileMetadata(documentID)
+	if err != nil {
+		return "", err
+	}
+	systemPrompt := fmt.Sprintf(`
+	You label documents. Return ONLY valid JSON, no markdown.
+
+	Schema: {"tags":["string",...]}
+	Rules:
+	- 1 to 8 tags
+	- lowercase, kebab-case (e.g. invoice, id-card, contract)
+	- pick from this allowlist when possible: invoice, receipt, id-card, contract, letter, form, other
+	- language: use English tag names even if document is Arabic
+
+	Document OCR:
+	%s
+	`, fileMetadata.OCRResult)
+	if fileMetadata.OCRResult == "" {
+		systemPrompt = `You label documents. Return ONLY valid JSON: {"tags":["other"]}`
+	}
+	response, err := s.provider.Chat(ctx, systemPrompt, "Tag this document.")
+	if err != nil {
+		return "", err
+	}
+
+	type tagResult struct {
+		Tags []string `json:"tags"`
+	}
+	var out tagResult
+	raw := strings.TrimSpace(response)
+	raw = strings.TrimPrefix(raw, "```json")
+	raw = strings.TrimPrefix(raw, "```")
+	raw = strings.TrimSuffix(raw, "```")
+	raw = strings.TrimSpace(raw)
+
+	if err := json.Unmarshal([]byte(raw), &out); err != nil {
+		return "", fmt.Errorf("parse tags json: %w (raw=%q)", err, raw)
+	}
+	if len(out.Tags) == 0 {
+		out.Tags = []string{"other"}
+	}
+
+	if err := s.docService.UpdateTags(documentID, out.Tags); err != nil {
+		return "", err
+	}
+
+	encoded, err := json.Marshal(out.Tags)
+	if err != nil {
+		return "", err
+	}
+	return string(encoded), nil
 }

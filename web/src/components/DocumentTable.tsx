@@ -28,9 +28,12 @@ function statusLabel(status: string) {
       return 'Processing'
     case 'thumbnail-processing':
       return 'Thumbnail'
+    case 'tag-processing':
+      return 'Tagging'
     case 'done':
     case 'ocr-done':
     case 'thumbnail-done':
+    case 'tag-done':
       return 'Done'
     case 'failed':
       return 'Failed'
@@ -237,6 +240,7 @@ export default function DocumentTable({
             <th aria-label="Preview" />
             <th>Name</th>
             <th>Status</th>
+            <th>Tags</th>
             <th>OCR</th>
             <th>Size</th>
             <th>Uploaded</th>
@@ -246,6 +250,7 @@ export default function DocumentTable({
         <tbody>
           {documents.map((doc) => {
             const ocrText = formatOcrResult(doc.ocr_result)
+            const tags = doc.tags?.filter(Boolean) ?? []
 
             return (
               <tr key={doc.id}>
@@ -257,6 +262,19 @@ export default function DocumentTable({
                   <span className={`status-badge status-${doc.status}`}>
                     {statusLabel(doc.status)}
                   </span>
+                </td>
+                <td className="tags-cell">
+                  {tags.length > 0 ? (
+                    <div className="tag-list">
+                      {tags.map((tag) => (
+                        <span key={tag} className="tag-chip">
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    <span className="ocr-empty">—</span>
+                  )}
                 </td>
                 <td className="ocr-cell">
                   {ocrText ? (

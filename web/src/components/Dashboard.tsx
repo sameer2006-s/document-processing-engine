@@ -10,7 +10,14 @@ interface DashboardProps {
   onLogout: () => void
 }
 
-const IN_FLIGHT = new Set(['pending', 'ocr-processing'])
+const IN_FLIGHT = new Set([
+  'pending',
+  'ocr-processing',
+  'ocr-done',
+  'thumbnail-processing',
+  'thumbnail-done',
+  'tag-processing',
+])
 
 export default function Dashboard({ onLogout }: DashboardProps) {
   const [documents, setDocuments] = useState<Document[]>([])

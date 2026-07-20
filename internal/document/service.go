@@ -48,8 +48,12 @@ func (s *DocumentService) UpdateFileMetadata(fileMetadata *FileMetadata) error {
 	return s.repository.UpdateFileMetadata(fileMetadata)
 }
 
-func (s *DocumentService) UpdateDocumentStatus(id uuid.UUID, status string) error {
-	return s.repository.UpdateDocumentStatus(id, DocumentStatus(status))
+func (s *DocumentService) UpdateTags(id uuid.UUID, tags []string) error {
+	return s.repository.UpdateTags(id, tags)
+}
+
+func (s *DocumentService) UpdateDocumentStatus(id uuid.UUID, status DocumentStatus) error {
+	return s.repository.UpdateDocumentStatus(id, status)
 }
 
 func (s *DocumentService) DeleteFileMetadata(id uuid.UUID) error {

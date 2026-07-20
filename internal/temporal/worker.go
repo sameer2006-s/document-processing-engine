@@ -9,14 +9,14 @@ import (
 
 type TemporalWorker struct {
 	worker                     worker.Worker
-	ocrActivity                *OCRActivity
+	documentActivity                *DocumentActivity
 	DocumentProcessingWorkflow func(ctx workflow.Context, documentID string) (DocumentProcessingWorkflowResult, error)
 }
 
-func NewTemporalWorker(temporalClient *TemporalClient, ocrActivity *OCRActivity) *TemporalWorker {
+func NewTemporalWorker(temporalClient *TemporalClient, documentActivity *DocumentActivity) *TemporalWorker {
 	return &TemporalWorker{
 		worker:                     worker.New(temporalClient.Client, DocumentProcessingTaskQueue, worker.Options{}),
-		ocrActivity:                ocrActivity,
+		documentActivity:                documentActivity,
 		DocumentProcessingWorkflow: DocumentProcessingWorkflow,
 	}
 }
@@ -27,7 +27,7 @@ func (w *TemporalWorker) RegisterWorkflows() error {
 }
 
 func (w *TemporalWorker) RegisterActivities() error {
-	w.worker.RegisterActivity(w.ocrActivity)
+	w.worker.RegisterActivity(w.documentActivity)
 	return nil
 }
 

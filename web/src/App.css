@@ -151,7 +151,7 @@
 }
 
 .dashboard {
-  max-width: 1100px;
+  max-width: 900px;
   margin: 0 auto;
   text-align: left;
 }
@@ -327,6 +327,28 @@
 .ocr-empty {
   color: var(--text);
   opacity: 0.6;
+}
+
+.tags-cell {
+  max-width: 220px;
+  vertical-align: middle;
+}
+
+.tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.tag-chip {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 500;
+  background: rgba(37, 99, 235, 0.1);
+  color: #1d4ed8;
+  white-space: nowrap;
 }
 
 .ocr-modal-backdrop {

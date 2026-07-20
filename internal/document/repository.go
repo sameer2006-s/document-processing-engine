@@ -95,6 +95,17 @@ func (r *DocumentRepository) UpdateFileMetadata(fileMetadata *FileMetadata) erro
 	return nil
 }
 
+func (r *DocumentRepository) UpdateTags(id uuid.UUID, tags []string) error {
+	err := r.db.Model(&FileMetadata{}).Where("id = ?", id).Update("tags", tags).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return errors.New("file metadata not found")
+		}
+		return errors.New("failed to update tags")
+	}
+	return nil
+}
+
 func (r *DocumentRepository) UpdateDocumentStatus(id uuid.UUID, status DocumentStatus) error {
 	err := r.db.Model(&FileMetadata{}).Where("id = ?", id).Update("status", status).Error
 	if err != nil {

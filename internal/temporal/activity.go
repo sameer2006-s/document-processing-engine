@@ -4,9 +4,9 @@ import (
 	"context"
 
 	"github.com/google/uuid"
+	"github.com/sameer2006-s/document-processing-engine/internal/chat"
 	"github.com/sameer2006-s/document-processing-engine/internal/document"
 	"github.com/sameer2006-s/document-processing-engine/internal/ocr"
-	"gorm.io/gorm"
 )
 
 // DocumentStatusUpdater updates document rows from activities.
@@ -15,27 +15,30 @@ type DocumentStatusUpdater interface {
 	UpdateDocumentStatus(id uuid.UUID, status document.DocumentStatus) error
 }
 
-type OCRActivity struct {
+type DocumentActivity struct {
 	ocrService *ocr.OCRService
+	chatService *chat.ChatService
+	documentService *document.DocumentService
 }
 
-func NewOCRActivity(db *gorm.DB, minioClient document.MinIOClient) *OCRActivity {
-	ocrService := ocr.NewOCRService(db, minioClient)
-	return &OCRActivity{
+func NewDocumentActivity(ocrService *ocr.OCRService, chatService *chat.ChatService, documentService *document.DocumentService) *DocumentActivity {
+	return &DocumentActivity{
 		ocrService: ocrService,
+		chatService: chatService,
+		documentService: documentService,
 	}
 }
 
-func (a *OCRActivity) RunOCRActivity(ctx context.Context, documentID string) (string, error) {
+func (a *DocumentActivity) RunOCRActivity(ctx context.Context, documentID string) (string, error) {
 	id, err := uuid.Parse(documentID)
 	if err != nil {
-		_ = a.ocrService.UpdateDocumentStatus(id, document.DocumentStatusFailed);
+		_ = a.documentService.UpdateDocumentStatus(id, document.DocumentStatusFailed);
 		return "", err
 	}
-	_ = a.ocrService.UpdateDocumentStatus(id, document.DocumentStatusOCRProcessing);
+	_ = a.documentService.UpdateDocumentStatus(id, document.DocumentStatusOCRProcessing);
 	result, err := a.ocrService.RunOCR(ctx, id)
 	if err != nil {
-		_ = a.ocrService.UpdateDocumentStatus(id, document.DocumentStatusFailed);
+		_ = a.documentService.UpdateDocumentStatus(id, document.DocumentStatusFailed);
 		return "", err
 	}
 
@@ -47,33 +50,52 @@ func (a *OCRActivity) RunOCRActivity(ctx context.Context, documentID string) (st
 	return result, nil
 }
 
-func (a *OCRActivity) RunThumbnailActivity(ctx context.Context, documentID string) (string, error) {
+func (a *DocumentActivity) RunThumbnailActivity(ctx context.Context, documentID string) (string, error) {
 	id, err := uuid.Parse(documentID)
 	if err != nil {
 		return "", err
 	}
-	if err := a.ocrService.UpdateDocumentStatus(id, document.DocumentStatusThumbnailProcessing); err != nil {
+	if err := a.documentService.UpdateDocumentStatus(id, document.DocumentStatusThumbnailProcessing); err != nil {
 		return "", err
 	}
 	thumbnail, err := a.ocrService.GenerateThumbnail(id)
 	if err != nil {
-		_ = a.ocrService.UpdateDocumentStatus(id, document.DocumentStatusFailed);
+		_ = a.documentService.UpdateDocumentStatus(id, document.DocumentStatusFailed);
 		return "", err
 	}
-	if err := a.ocrService.UpdateDocumentStatus(id, document.DocumentStatusThumbnailDone); err != nil {
+	if err := a.documentService.UpdateDocumentStatus(id, document.DocumentStatusThumbnailDone); err != nil {
 		return "", err
 	}
 	return thumbnail, nil
 }
 
-func (a *OCRActivity) UpdateDocumentStatusActivity(ctx context.Context, documentID string, status document.DocumentStatus) error {
+func (a *DocumentActivity) UpdateDocumentStatusActivity(ctx context.Context, documentID string, status string) error {
 	id, err := uuid.Parse(documentID)
 	if err != nil {
 		return err
 	}
-	err = a.ocrService.UpdateDocumentStatus(id, status)
+	err = a.documentService.UpdateDocumentStatus(id, document.DocumentStatus(status))
 	if err != nil {
 		return err
 	}
 	return nil
+}
+
+func (a *DocumentActivity) RunTagActivity(ctx context.Context, documentID string) (string, error) {
+	id, err := uuid.Parse(documentID)
+	if err != nil {
+		return "", err
+	}
+	if err := a.documentService.UpdateDocumentStatus(id, document.DocumentStatusTagProcessing); err != nil {
+		return "", err
+	}
+	tags, err := a.chatService.GenerateTags(ctx, id)
+	if err != nil {
+		_ = a.documentService.UpdateDocumentStatus(id, document.DocumentStatusFailed);
+		return "", err
+	}
+	if err := a.documentService.UpdateDocumentStatus(id, document.DocumentStatusTagDone); err != nil {
+		return "", err
+	}
+	return tags, nil
 }
