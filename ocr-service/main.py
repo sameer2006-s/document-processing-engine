@@ -14,7 +14,8 @@ def health():
 
 
 def _ocr_image(image: Image.Image) -> str:
-    return pytesseract.image_to_string(image).strip()
+    # Arabic + English (requires tesseract-ocr-ara language pack)
+    return pytesseract.image_to_string(image, lang="ara+eng").strip()
 
 
 @app.post("/ocr")
