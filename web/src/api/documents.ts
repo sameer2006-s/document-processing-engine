@@ -26,6 +26,10 @@ export function downloadFile(id: string) {
   return apiFetch<Blob>(`/get-file/${id}`)
 }
 
+export function fetchThumbnail(id: string) {
+  return apiFetch<Blob>(`/documents/${id}/thumbnail`)
+}
+
 export function deleteDocument(id: string) {
   return apiFetch<{ message: string }>(`/documents/${id}`, {
     method: 'DELETE',

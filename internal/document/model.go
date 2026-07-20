@@ -11,6 +11,9 @@ type DocumentStatus string
 const (
 	DocumentStatusPending       DocumentStatus = "pending"
 	DocumentStatusOCRProcessing DocumentStatus = "ocr-processing"
+	DocumentStatusOCRDone DocumentStatus = "ocr-done"
+	DocumentStatusThumbnailProcessing DocumentStatus = "thumbnail-processing"
+	DocumentStatusThumbnailDone DocumentStatus = "thumbnail-done"
 	DocumentStatusDone          DocumentStatus = "done"
 	DocumentStatusFailed        DocumentStatus = "failed"
 )
@@ -25,6 +28,7 @@ type FileMetadata struct {
 	ContentType  string         `json:"content_type"`
 	Status       DocumentStatus `json:"status" gorm:"default:pending"`
 	OCRResult    string         `json:"ocr_result" gorm:"type:text"`
+	ThumbnailKey string         `json:"thumbnail_key"`
 	CreatedAt    time.Time      `json:"created_at" gorm:"autoCreateTime"`
 	UpdatedAt    time.Time      `json:"updated_at" gorm:"autoUpdateTime"`
 	DeletedAt    gorm.DeletedAt `gorm:"index" json:"-"`

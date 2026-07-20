@@ -40,14 +40,25 @@ func (r *DocumentRepository) CreateFileMetadata(fileMetadata *FileMetadata) erro
 	return nil
 }
 
-func (r *DocumentRepository) GetFileContent(id uuid.UUID) ([]byte, error) {
-	fileMetadata, err:= r.GetFileMetadataByID(id)
-	if err!= nil {
-		return nil, errors.New("failed to get file metadata") 
+func (r *DocumentRepository) GetThumbnail(id uuid.UUID) ([]byte, error) {
+	fileMetadata, err := r.GetFileMetadataByID(id)
+	if err != nil {
+		return nil, errors.New("failed to get file metadata")
 	}
-	fileContent, err:= r.minioClient.GetFile(fileMetadata)
-	if err!= nil {
-		return nil, errors.New("failed to get file content") 
+	if fileMetadata.ThumbnailKey == "" {
+		return nil, gorm.ErrRecordNotFound
+	}
+	return r.minioClient.GetObject(fileMetadata.BucketName, fileMetadata.ThumbnailKey)
+}
+
+func (r *DocumentRepository) GetFileContent(id uuid.UUID) ([]byte, error) {
+	fileMetadata, err := r.GetFileMetadataByID(id)
+	if err != nil {
+		return nil, errors.New("failed to get file metadata")
+	}
+	fileContent, err := r.minioClient.GetFile(fileMetadata)
+	if err != nil {
+		return nil, errors.New("failed to get file content")
 	}
 	return fileContent, nil
 }

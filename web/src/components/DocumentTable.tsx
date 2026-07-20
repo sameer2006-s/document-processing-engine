@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, useState } from 'react'
-import { deleteDocument, downloadFile } from '../api/documents'
+import { deleteDocument, downloadFile, fetchThumbnail } from '../api/documents'
 import { getErrorMessage } from '../api/client'
 import type { Document } from '../api/types'
 
@@ -26,7 +26,11 @@ function statusLabel(status: string) {
       return 'Pending'
     case 'ocr-processing':
       return 'Processing'
+    case 'thumbnail-processing':
+      return 'Thumbnail'
     case 'done':
+    case 'ocr-done':
+    case 'thumbnail-done':
       return 'Done'
     case 'failed':
       return 'Failed'
@@ -47,6 +51,50 @@ function formatOcrResult(raw?: string) {
     // plain text
   }
   return raw.trim()
+}
+
+function DocumentThumbnail({ doc }: { doc: Document }) {
+  const [src, setSrc] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!doc.thumbnail_key) {
+      setSrc(null)
+      return
+    }
+
+    let objectUrl: string | null = null
+    let cancelled = false
+
+    void (async () => {
+      try {
+        const blob = await fetchThumbnail(doc.id)
+        if (cancelled) return
+        objectUrl = URL.createObjectURL(blob)
+        setSrc(objectUrl)
+      } catch {
+        if (!cancelled) setSrc(null)
+      }
+    })()
+
+    return () => {
+      cancelled = true
+      if (objectUrl) URL.revokeObjectURL(objectUrl)
+    }
+  }, [doc.id, doc.thumbnail_key])
+
+  if (!doc.thumbnail_key || !src) {
+    return <div className="doc-thumb placeholder" aria-hidden />
+  }
+
+  return (
+    <img
+      className="doc-thumb"
+      src={src}
+      alt=""
+      width={48}
+      height={48}
+    />
+  )
 }
 
 function OcrViewer({
@@ -186,6 +234,7 @@ export default function DocumentTable({
       <table className="doc-table">
         <thead>
           <tr>
+            <th aria-label="Preview" />
             <th>Name</th>
             <th>Status</th>
             <th>OCR</th>
@@ -200,6 +249,9 @@ export default function DocumentTable({
 
             return (
               <tr key={doc.id}>
+                <td className="thumb-cell">
+                  <DocumentThumbnail doc={doc} />
+                </td>
                 <td className="name-cell">{doc.original_name}</td>
                 <td>
                   <span className={`status-badge status-${doc.status}`}>

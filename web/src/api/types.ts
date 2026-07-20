@@ -5,6 +5,7 @@ export interface Document {
   content_type: string
   status: 'pending' | 'ocr-processing' | 'done' | 'failed' | string
   ocr_result?: string
+  thumbnail_key?: string
   created_at: string
 }
 

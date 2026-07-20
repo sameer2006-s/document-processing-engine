@@ -4,10 +4,17 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"image"
 	"io"
 	"mime/multipart"
 	"net/http"
+	"strings"
 	"time"
+	_ "image/gif"
+	_ "image/jpeg"
+	_ "image/png"
+	"image/jpeg"
+	"golang.org/x/image/draw"
 
 	"github.com/google/uuid"
 	"github.com/sameer2006-s/document-processing-engine/internal/document"
@@ -95,4 +102,45 @@ func (s *OCRService) SaveOCRResult(ctx context.Context, documentID uuid.UUID, oc
 
 func (s *OCRService) UpdateDocumentStatus(id uuid.UUID, status document.DocumentStatus) error {
 	return s.repository.UpdateDocumentStatus(id, status)
+}
+
+func (s *OCRService) GenerateThumbnail(id uuid.UUID) (string, error) {
+	meta, err := s.repository.GetFileMetadataByID(id)
+	if err != nil {
+	  return "", err
+	}
+	// Images only — skip PDF/etc.
+	ct := strings.ToLower(meta.ContentType)
+	if !strings.HasPrefix(ct, "image/") {
+	  return "", nil // not an error; activity succeeds, no thumb
+	}
+	raw, err := s.repository.GetFileContent(meta)
+	if err != nil {
+	  return "", err
+	}
+	src, _, err := image.Decode(bytes.NewReader(raw))
+	if err != nil {
+	  return "", err // or return nil to soft-skip bad images
+	}
+	const maxW = 320
+	b := src.Bounds()
+	w, h := b.Dx(), b.Dy()
+	if w > maxW {
+	  h = h * maxW / w
+	  w = maxW
+	}
+	dst := image.NewRGBA(image.Rect(0, 0, w, h))
+	draw.CatmullRom.Scale(dst, dst.Bounds(), src, b, draw.Over, nil)
+	var out bytes.Buffer
+	if err := jpeg.Encode(&out, dst, &jpeg.Options{Quality: 85}); err != nil {
+	  return "", err
+	}
+	key := "thumbs/" + id.String() + ".jpg"
+	if err := s.repository.UploadThumbnail(meta.BucketName, key, out.Bytes()); err != nil {
+		return "", err
+	}
+	if err := s.repository.SaveThumbnailKey(id, key); err != nil {
+		return "", err
+	}
+	return key, nil
 }

@@ -28,6 +28,14 @@ func (s *DocumentService) GetFileContent(id uuid.UUID) ([]byte, error) {
 	return s.repository.GetFileContent(id)
 }
 
+func (s *DocumentService) GetThumbnail(id uuid.UUID) ([]byte, error) {
+	data, err := s.repository.GetThumbnail(id)
+	if err != nil {
+		return nil, ErrFileNotFound
+	}
+	return data, nil
+}
+
 func (s *DocumentService) CreateFileMetadata(document *FileMetadata) error {
 	return s.repository.CreateFileMetadata(document)
 }

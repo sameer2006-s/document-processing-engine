@@ -68,6 +68,28 @@ func (r *MinIOClient) UploadFile(fileMetadata *FileMetadata , file []byte) error
 	return nil
 }
 
+func (r *MinIOClient) UploadThumbnail(bucketName string, key string, fileContent []byte) error {
+	_, err := r.client.PutObject(context.Background(), bucketName, key, bytesReader(fileContent), int64(len(fileContent)), minio.PutObjectOptions{
+		ContentType: "image/jpeg",
+	})
+	if err != nil {
+		return errors.New("failed to upload thumbnail")
+	}
+	return nil
+}
+
+func (r *MinIOClient) GetObject(bucketName string, key string) ([]byte, error) {
+	object, err := r.client.GetObject(context.Background(), bucketName, key, minio.GetObjectOptions{})
+	if err != nil {
+		return nil, errors.New("failed to get object")
+	}
+	defer object.Close()
+	fileContent, err := io.ReadAll(object)
+	if err != nil {
+		return nil, errors.New("failed to read object")
+	}
+	return fileContent, nil
+}
 func (r *MinIOClient) DeleteFile(fileMetadata *FileMetadata) error {
 	err:= r.client.RemoveObject(context.Background(), fileMetadata.BucketName, fileMetadata.MinioKey, minio.RemoveObjectOptions{})
 	if err!= nil {

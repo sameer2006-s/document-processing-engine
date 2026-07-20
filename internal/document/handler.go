@@ -131,6 +131,25 @@ func (h *DocumentHandler) GetFile(c *gin.Context) {
 	c.Data(http.StatusOK, stat.ContentType, fileContent)
 }
 
+func (h *DocumentHandler) GetThumbnail(c *gin.Context) {
+	id, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
+		return
+	}
+	data, err := h.service.GetThumbnail(id)
+	if err != nil {
+		if errors.Is(err, ErrFileNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "thumbnail not found"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.Header("Cache-Control", "private, max-age=3600")
+	c.Data(http.StatusOK, "image/jpeg", data)
+}
+
 func (h *DocumentHandler) SearchMyFiles(c *gin.Context) {
 	query := c.Query("query")
 	userID, err := auth.GetUserID(c)

@@ -38,3 +38,11 @@ func (r *OCRRepository) GetFileContent(fileMetadata *document.FileMetadata) ([]b
 func (r *OCRRepository) SaveOCRResult(documentID uuid.UUID, ocrResult string) error {
 	return r.db.Model(&document.FileMetadata{}).Where("id = ?", documentID).Update("ocr_result", ocrResult).Error
 }
+
+func (r *OCRRepository) UploadThumbnail(bucketName string, key string, fileContent []byte) error {
+	return r.minioClient.UploadThumbnail(bucketName, key, fileContent)
+}
+
+func (r *OCRRepository) SaveThumbnailKey(documentID uuid.UUID, key string) error {
+	return r.db.Model(&document.FileMetadata{}).Where("id = ?", documentID).Update("thumbnail_key", key).Error
+}

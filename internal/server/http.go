@@ -25,6 +25,7 @@ func RunHttpServer(authHandler *auth.AuthHandler, authService *auth.AuthService,
 	protected.GET("/documents", documentHandler.ListDocuments)
 	protected.DELETE("/documents/:id", documentHandler.DeleteDocument)
 	protected.GET("/get-file/:id", documentHandler.GetFile)
+	protected.GET("/documents/:id/thumbnail", documentHandler.GetThumbnail)
 	protected.GET("/search-my-files", documentHandler.SearchMyFiles)
 	protected.POST("/chat", chatHandler.Chat)
 	protected.POST("/chat/stream", chatHandler.ChatStream)
