@@ -46,3 +46,30 @@ func (s *ChatService) Chat(ctx context.Context,userPrompt string, documentID uui
 	}
 	return response, nil
 }
+
+func (s *ChatService) ChatStream(ctx context.Context, userPrompt string, documentID uuid.UUID, userID uuid.UUID, onToken func(string) error) (full string, err error) {
+	fileMetadata, err := s.docService.GetFileMetadata(documentID)
+	if err != nil {
+		return "", err
+	}
+	systemPrompt := fmt.Sprintf("You are a helpful assistant that can answer questions about the document. The document is: %s", fileMetadata.OCRResult)
+	if fileMetadata.OCRResult == "" {
+		systemPrompt = "You are a helpful assistant that can answer questions about the document."
+	}
+	chat := &Chat{
+		UserID:           userID,
+		DocumentID:       fileMetadata.ID,
+		UserMessage:      userPrompt,
+		SystemPrompt:     systemPrompt,
+		AssistantMessage: "",
+	}
+	full, err = s.provider.ChatStream(ctx, chat.SystemPrompt, chat.UserMessage, onToken)
+	if err != nil {
+		return "", err
+	}
+	chat.AssistantMessage = full
+	if err := s.repository.CreateChat(chat); err != nil {
+		return full, err
+	}
+	return full, nil
+}

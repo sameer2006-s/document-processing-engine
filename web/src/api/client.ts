@@ -7,8 +7,18 @@ export function setAuthToken(token: string | null) {
   authToken = token
 }
 
+export function getAuthToken() {
+  return authToken
+}
+
 export function setOnUnauthorized(callback: () => void) {
   onUnauthorized = callback
+}
+
+export function notifyUnauthorized() {
+  if (authToken) {
+    onUnauthorized?.()
+  }
 }
 
 export class RequestError extends Error {

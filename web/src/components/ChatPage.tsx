@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from 'react'
-import { sendChat } from '../api/chat'
+import { streamChat } from '../api/chat'
 import { getErrorMessage } from '../api/client'
 import type { Document } from '../api/types'
 
@@ -20,6 +20,7 @@ export default function ChatPage({ doc, onBack }: ChatPageProps) {
   const [error, setError] = useState<string | null>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
+  const abortRef = useRef<AbortController | null>(null)
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -27,6 +28,9 @@ export default function ChatPage({ doc, onBack }: ChatPageProps) {
 
   useEffect(() => {
     inputRef.current?.focus()
+    return () => {
+      abortRef.current?.abort()
+    }
   }, [])
 
   async function handleSend(e: FormEvent) {
@@ -36,20 +40,52 @@ export default function ChatPage({ doc, onBack }: ChatPageProps) {
 
     setError(null)
     setPrompt('')
-    setMessages((prev) => [...prev, { role: 'user', content: text }])
+    setMessages((prev) => [
+      ...prev,
+      { role: 'user', content: text },
+      { role: 'assistant', content: '' },
+    ])
     setSending(true)
 
+    const controller = new AbortController()
+    abortRef.current = controller
+
     try {
-      const data = await sendChat(doc.id, text)
-      setMessages((prev) => [
-        ...prev,
-        { role: 'assistant', content: data.response },
-      ])
+      await streamChat(doc.id, text, {
+        signal: controller.signal,
+        onToken: (token) => {
+          setMessages((prev) => {
+            const next = [...prev]
+            const last = next[next.length - 1]
+            if (last?.role === 'assistant') {
+              next[next.length - 1] = {
+                ...last,
+                content: last.content + token,
+              }
+            }
+            return next
+          })
+        },
+      })
     } catch (err) {
+      if (err instanceof DOMException && err.name === 'AbortError') {
+        return
+      }
       setError(getErrorMessage(err))
-      setMessages((prev) => prev.slice(0, -1))
+      setMessages((prev) => {
+        const next = [...prev]
+        const last = next[next.length - 1]
+        if (last?.role === 'assistant' && last.content === '') {
+          next.pop()
+          if (next[next.length - 1]?.role === 'user') {
+            next.pop()
+          }
+        }
+        return next
+      })
       setPrompt(text)
     } finally {
+      abortRef.current = null
       setSending(false)
     }
   }
@@ -87,15 +123,12 @@ export default function ChatPage({ doc, onBack }: ChatPageProps) {
             <span className="chat-role">
               {msg.role === 'user' ? 'You' : 'Assistant'}
             </span>
-            <pre className="chat-content">{msg.content}</pre>
+            <pre className="chat-content">
+              {msg.content ||
+                (sending && i === messages.length - 1 ? '…' : '')}
+            </pre>
           </div>
         ))}
-        {sending && (
-          <div className="chat-bubble assistant">
-            <span className="chat-role">Assistant</span>
-            <p className="chat-content muted">Thinking…</p>
-          </div>
-        )}
         <div ref={bottomRef} />
       </div>
 
@@ -116,7 +149,7 @@ export default function ChatPage({ doc, onBack }: ChatPageProps) {
           className="btn primary"
           disabled={sending || !prompt.trim()}
         >
-          {sending ? 'Sending…' : 'Send'}
+          {sending ? 'Streaming…' : 'Send'}
         </button>
       </form>
     </div>
