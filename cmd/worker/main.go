@@ -44,7 +44,10 @@ func main() {
 	if err != nil {
 		log.Fatal("Failed to create minio client: ", err)
 	}
-	provider := chat.NewChatProvider(cfg.Chat.GitHubToken, cfg.Chat.Model)
+	provider, err := chat.NewProviderFromConfig(cfg.Chat)
+	if err != nil {
+		log.Fatal("Failed to create chat provider: ", err)
+	}
 	ocrService := ocr.NewOCRService(db, *minioClient)
 
 	documentRepository, err := document.NewDocumentRepository(db, cfg.Minio)

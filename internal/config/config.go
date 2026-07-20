@@ -37,8 +37,12 @@ type MinioConfig struct {
 }
 
 type ChatConfig struct {
-	GitHubToken string `env:"GITHUB_TOKEN, required"`
-	Model       string `env:"GITHUB_MODEL, default=openai/o4-mini"`
+	Provider      string `env:"CHAT_PROVIDER, default=github"`
+	GitHubToken   string `env:"GITHUB_TOKEN"`
+	OpenRouterKey string `env:"OPENROUTER_API_KEY"`
+	Model         string `env:"CHAT_MODEL, default=openai/o4-mini"`
+	SiteURL       string `env:"OPENROUTER_SITE_URL"`
+	AppName       string `env:"OPENROUTER_APP_NAME"`
 }
 
 func Load() (*Config, error) {

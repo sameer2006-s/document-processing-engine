@@ -77,7 +77,7 @@ func (r *DocumentRepository) GetFileMetadataByID(id uuid.UUID) (*FileMetadata, e
 
 func (r *DocumentRepository) GetFileMetadataByUserID(userID uuid.UUID) ([]FileMetadata, error) {
 	var fileMetadata []FileMetadata
-	err:= r.db.Model(&FileMetadata{}).Where("user_id = ?", userID).Find(&fileMetadata).Error
+	err:= r.db.Model(&FileMetadata{}).Where("user_id = ?", userID).Order("created_at DESC").Find(&fileMetadata).Error
 	if err!= nil {
 		return nil, errors.New("failed to get file metadata") 
 	}
@@ -96,7 +96,8 @@ func (r *DocumentRepository) UpdateFileMetadata(fileMetadata *FileMetadata) erro
 }
 
 func (r *DocumentRepository) UpdateTags(id uuid.UUID, tags []string) error {
-	err := r.db.Model(&FileMetadata{}).Where("id = ?", id).Update("tags", tags).Error
+	err := r.db.Model(&FileMetadata{}).Where("id = ?", id).Updates(FileMetadata{Tags: tags}).Error
+
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return errors.New("file metadata not found")
@@ -150,7 +151,7 @@ func (r *DocumentRepository) GetPendingDocuments() ([]FileMetadata, error) {
 
 func (r *DocumentRepository) SearchUserDocuments(userID uuid.UUID, query string) ([]FileMetadata, error) {
 	var fileMetadata []FileMetadata
-	err:= r.db.Model(&FileMetadata{}).Where("user_id = ? AND (ocr_result ILIKE ? OR original_name ILIKE ?)", userID, "%"+query+"%", "%"+query+"%").Find(&fileMetadata).Error
+	err:= r.db.Model(&FileMetadata{}).Where("user_id = ? AND (ocr_result ILIKE ? OR original_name ILIKE ?)", userID, "%"+query+"%", "%"+query+"%").Order("created_at DESC").Find(&fileMetadata).Error
 	if err!= nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, errors.New("no documents found") 

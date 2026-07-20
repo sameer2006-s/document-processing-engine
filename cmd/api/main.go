@@ -48,7 +48,10 @@ func main() {
 	documentService := document.NewDocumentService(documentRepository, temporalClient.StartDocumentProcessing)
 	documentHandler := document.NewDocumentHandler(documentService)
 
-	chatProvider := chat.NewChatProvider(cfg.Chat.GitHubToken, cfg.Chat.Model)
+	chatProvider, err := chat.NewProviderFromConfig(cfg.Chat)
+	if err != nil {
+		log.Fatal("Failed to create chat provider: ", err)
+	}
 	chatRepository := chat.NewChatRepository(db)
 	chatService := chat.NewChatService(chatProvider, documentService, chatRepository)
 	chatHandler := chat.NewChatHandler(chatService)

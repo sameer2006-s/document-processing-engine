@@ -11,12 +11,12 @@ import (
 )
 
 type ChatService struct {
-	provider *ChatProvider
+	provider   LLMProvider
 	docService *document.DocumentService
 	repository *ChatRepository
 }
 
-func NewChatService(provider *ChatProvider, docService *document.DocumentService, repository *ChatRepository) *ChatService {
+func NewChatService(provider LLMProvider, docService *document.DocumentService, repository *ChatRepository) *ChatService {
 	return &ChatService{provider: provider, docService: docService, repository: repository}
 }
 
@@ -87,8 +87,7 @@ func (s *ChatService) GenerateTags(ctx context.Context, documentID uuid.UUID) (s
 	Schema: {"tags":["string",...]}
 	Rules:
 	- 1 to 8 tags
-	- lowercase, kebab-case (e.g. invoice, id-card, contract)
-	- pick from this allowlist when possible: invoice, receipt, id-card, contract, letter, form, other
+	- lowercase, kebab-case (e.g. invoice, id-card, contract, etc.)
 	- language: use English tag names even if document is Arabic
 
 	Document OCR:

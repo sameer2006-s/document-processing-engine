@@ -37,7 +37,12 @@ export default function Dashboard({ onLogout }: DashboardProps) {
       const data = trimmed
         ? await searchMyFiles(trimmed)
         : await listDocuments()
-      setDocuments(data)
+      setDocuments(
+        [...data].sort(
+          (a, b) =>
+            new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+        ),
+      )
     } catch (err) {
       if (!quiet) setError(getErrorMessage(err))
     } finally {
