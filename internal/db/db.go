@@ -34,7 +34,6 @@ func New(cfg config.DBConfig) (*gorm.DB, error) {
 		return nil, fmt.Errorf("ping database: %w", err)
 	}
 
-	// Optional connection pool settings
 	sqlDB.SetMaxOpenConns(25)
 	sqlDB.SetMaxIdleConns(10)
 	sqlDB.SetConnMaxLifetime(time.Hour)

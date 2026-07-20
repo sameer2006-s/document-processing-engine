@@ -3,6 +3,7 @@ package db
 import (
 	"github.com/sameer2006-s/document-processing-engine/internal/auth"
 	"github.com/sameer2006-s/document-processing-engine/internal/document"
+	"github.com/sameer2006-s/document-processing-engine/internal/chat"
 	"gorm.io/gorm"
 )
 
@@ -15,5 +16,6 @@ func MyAutoMigrate(db *gorm.DB) error {
 	return db.AutoMigrate(
 		&auth.User{},
 		&document.FileMetadata{},
+		&chat.Chat{},
 	)
 }

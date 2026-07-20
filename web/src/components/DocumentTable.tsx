@@ -6,6 +6,7 @@ import type { Document } from '../api/types'
 interface DocumentTableProps {
   documents: Document[]
   onDeleted: () => void
+  onChat?: (doc: Document) => void
   emptyMessage?: string
 }
 
@@ -129,6 +130,7 @@ function OcrViewer({
 export default function DocumentTable({
   documents,
   onDeleted,
+  onChat,
   emptyMessage = 'No documents yet. Upload your first file above.',
 }: DocumentTableProps) {
   const [busyId, setBusyId] = useState<string | null>(null)
@@ -222,6 +224,21 @@ export default function DocumentTable({
                 <td>{formatSize(doc.file_size)}</td>
                 <td>{formatDate(doc.created_at)}</td>
                 <td className="actions-cell">
+                  {onChat && (
+                    <button
+                      type="button"
+                      className="btn ghost"
+                      disabled={busyId === doc.id || !ocrText}
+                      title={
+                        ocrText
+                          ? 'Chat about this document'
+                          : 'OCR text required before chat'
+                      }
+                      onClick={() => onChat(doc)}
+                    >
+                      Chat
+                    </button>
+                  )}
                   <button
                     type="button"
                     className="btn ghost"

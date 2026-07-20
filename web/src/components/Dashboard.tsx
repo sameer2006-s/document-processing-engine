@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { listDocuments, searchMyFiles } from '../api/documents'
 import { getErrorMessage } from '../api/client'
 import type { Document } from '../api/types'
+import ChatPage from './ChatPage'
 import DocumentTable from './DocumentTable'
 import UploadZone from './UploadZone'
 
@@ -17,6 +18,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
   const [error, setError] = useState<string | null>(null)
   const [searchInput, setSearchInput] = useState('')
   const [query, setQuery] = useState('')
+  const [chatDoc, setChatDoc] = useState<Document | null>(null)
 
   const loadDocuments = useCallback(async (quiet = false, searchQuery = query) => {
     if (!quiet) {
@@ -49,6 +51,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
 
   // Poll while any document is still processing so status stays fresh.
   useEffect(() => {
+    if (chatDoc) return
     const hasInFlight = documents.some((d) => IN_FLIGHT.has(d.status))
     if (!hasInFlight) return
 
@@ -57,7 +60,15 @@ export default function Dashboard({ onLogout }: DashboardProps) {
     }, 2000)
 
     return () => window.clearInterval(id)
-  }, [documents, loadDocuments])
+  }, [documents, loadDocuments, chatDoc])
+
+  if (chatDoc) {
+    return (
+      <div className="dashboard">
+        <ChatPage doc={chatDoc} onBack={() => setChatDoc(null)} />
+      </div>
+    )
+  }
 
   return (
     <div className="dashboard">
@@ -115,6 +126,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
         <DocumentTable
           documents={documents}
           onDeleted={() => void loadDocuments()}
+          onChat={setChatDoc}
           emptyMessage={
             query
               ? `No files matched “${query}”.`

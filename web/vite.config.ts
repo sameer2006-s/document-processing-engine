@@ -15,6 +15,7 @@ export default defineConfig({
       '/documents': { target: 'http://localhost:7070', changeOrigin: true },
       '/get-file': { target: 'http://localhost:7070', changeOrigin: true },
       '/search-my-files': { target: 'http://localhost:7070', changeOrigin: true },
+      '/chat': { target: 'http://localhost:7070', changeOrigin: true },
     },
   },
   build: { outDir: 'dist' },

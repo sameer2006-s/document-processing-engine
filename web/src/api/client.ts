@@ -25,7 +25,7 @@ async function readErrorMessage(response: Response) {
   let message = response.statusText
   try {
     const data = (await response.json()) as ApiError
-    message = data.error ?? message
+    message = data.error ?? data.response ?? message
   } catch {
     // ignore non-JSON error bodies
   }

@@ -8,6 +8,7 @@ import (
 	"github.com/sameer2006-s/document-processing-engine/internal/config"
 	myDB "github.com/sameer2006-s/document-processing-engine/internal/db"
 	"github.com/sameer2006-s/document-processing-engine/internal/document"
+	"github.com/sameer2006-s/document-processing-engine/internal/chat"
 	"github.com/sameer2006-s/document-processing-engine/internal/server"
 	"github.com/sameer2006-s/document-processing-engine/internal/temporal"
 )
@@ -47,12 +48,17 @@ func main() {
 	documentService := document.NewDocumentService(documentRepository, temporalClient.StartDocumentProcessing)
 	documentHandler := document.NewDocumentHandler(documentService)
 
+	chatProvider := chat.NewChatProvider(cfg.Chat.GitHubToken, cfg.Chat.Model)
+	chatRepository := chat.NewChatRepository(db)
+	chatService := chat.NewChatService(chatProvider, documentService, chatRepository)
+	chatHandler := chat.NewChatHandler(chatService)
+
 	defer func() {
 		sqlDB, _ := db.DB()
 		_ = sqlDB.Close()
 	}()
 
-	err = server.RunHttpServer(authHandler, authService, documentHandler, cfg.App)
+	err = server.RunHttpServer(authHandler, authService, documentHandler, chatHandler, cfg.App)
 	if err != nil {
 		log.Fatal("Failed to run server: ", err)
 	}

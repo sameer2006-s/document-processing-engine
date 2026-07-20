@@ -19,5 +19,7 @@ export interface RegisterResponse {
 }
 
 export interface ApiError {
-  error: string
+  error?: string
+  response?: string
 }
+

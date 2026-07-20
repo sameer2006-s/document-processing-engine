@@ -8,9 +8,10 @@ import (
 	"github.com/sameer2006-s/document-processing-engine/internal/auth"
 	"github.com/sameer2006-s/document-processing-engine/internal/config"
 	"github.com/sameer2006-s/document-processing-engine/internal/document"
+	"github.com/sameer2006-s/document-processing-engine/internal/chat"
 )
 
-func RunHttpServer(authHandler *auth.AuthHandler, authService *auth.AuthService, documentHandler *document.DocumentHandler, cfg config.AppConfig) error {
+func RunHttpServer(authHandler *auth.AuthHandler, authService *auth.AuthService, documentHandler *document.DocumentHandler, chatHandler *chat.ChatHandler, cfg config.AppConfig) error {
 	router := gin.Default()
 	router.Use(gin.Logger())
 	router.Use(gin.Recovery())
@@ -25,6 +26,7 @@ func RunHttpServer(authHandler *auth.AuthHandler, authService *auth.AuthService,
 	protected.DELETE("/documents/:id", documentHandler.DeleteDocument)
 	protected.GET("/get-file/:id", documentHandler.GetFile)
 	protected.GET("/search-my-files", documentHandler.SearchMyFiles)
+	protected.POST("/chat", chatHandler.Chat)
 	router.Static("/assets", "./web/dist/assets")
 	router.StaticFile("/favicon.svg", "./web/dist/favicon.svg")
 	router.NoRoute(func(c *gin.Context) {
