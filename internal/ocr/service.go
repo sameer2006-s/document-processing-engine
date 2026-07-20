@@ -89,10 +89,6 @@ func (s *OCRService) RunOCR(ctx context.Context, documentID uuid.UUID) (string,e
 	if err != nil {
 		return "", err
 	}
-	err = s.UpdateDocumentStatus(documentID, document.DocumentStatusDone)
-	if err != nil {
-		return "", err
-	}
 	return "success", nil
 }
 
